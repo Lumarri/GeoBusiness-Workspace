@@ -283,3 +283,23 @@ Reinicia FastAPI después de compilar. Los binarios son locales, ignorados por G
 Las pruebas comparan el motor C++ con Python, verifican geometría, puntos coincidentes, entradas inválidas, ausencia de datos y el límite de trabajo. Compila primero para ejecutar las pruebas nativas; sin la biblioteca se omiten explícitamente esas dos comprobaciones. No se ha medido una mejora de rendimiento ni validado la compilación nativa en Windows.
 
 MapLibre 6 necesita su módulo worker separado. Los pasos `predev` y `prebuild` copian automáticamente el archivo de la versión instalada a `public/maplibre`; la aplicación lo carga desde esa URL del mismo servidor, sin depender de que Turbopack reconstruya su ruta. Este archivo generado está ignorado por Git. En la salida standalone también debe copiarse `public` junto a `.next/static`; el Dockerfile del frontend incluye ambos.
+
+## Ficha del lugar: selección precisa, clima y datos reportados
+
+**Ajustar punto** activa el pin arrastrable y el teclado (flechas: desplazamiento esférico aproximado de un metro). También puedes introducir coordenadas. La ficha usa una clave de seis decimales, no un identificador catastral: el nivel de precisión mostrado no garantiza la exactitud del geocodificador ni delimita una parcela o una unidad dentro de un edificio.
+
+La ficha del punto muestra:
+
+- Negocios OSM del radio: por defecto se consultan 3,2 segundos después de una selección o ajuste de radio explícitos, agrupando ajustes sucesivos del pin. No hay consulta OSM automática al cargar la página ni al abrir un snapshot. Puedes desactivar Consultar negocios al seleccionar o usar Analizar. Un fallo no se reintenta automáticamente; conserva Retry-After y requiere una nueva acción. Cambiar de lugar invalida la respuesta anterior.
+- Clima de Open-Meteo (`GET /api/v1/weather?lat=...&lng=...`): temperatura, humedad, viento y precipitación, con hora local de Lima. Es meteorología de modelo/celda, no una medición en el local ni un histórico climático. El clima tiene un límite independiente de 30 peticiones/minuto por IP y no consume el cupo de consultas OSM. La consulta se desacopla de OSM, se cancela en la interfaz al cambiar de punto y usa caché de 5 minutos/128 entradas (coordenadas redondeadas a cuatro decimales para caché). Un fallo no se convierte en cero ni bloquea la información restante.
+- Ingreso mensual por hogar, población y afluencia **reportados por el usuario**. Permanecen sin datos hasta que se introduce información con fuente, fecha y alcance.
+- Ingresos brutos de un **escenario propio**: ticket supuesto × clientes supuestos/día × días/mes. No es una predicción de ventas, renta de hogares ni beneficio neto. Los valores ausentes se mantienen distintos de cero.
+- Disponibilidad **reportada** (desconocida/disponible/ocupada), con fuente y fecha. Debe confirmarse con propietario o agente. Ningún conteo OSM implica que el local esté ocupado o libre.
+
+Se guardan hasta 50 fichas en este navegador, sin cuentas ni sincronización. Las fichas de puntos distintos no comparten estado. El clima no se guarda como una disponibilidad inmobiliaria. Se valida la fuente para datos reportados y se conserva el almacenamiento ilegible en vez de sobrescribirlo.
+
+### GEOIDEP y fuentes pendientes
+
+El usuario propuso https://www.geoidep.gob.pe/ como fuente oficial. **No existe aún una capa oficial de población, ingresos o catastro integrada.** La portada no identifica un conjunto de datos, sus unidades, periodo, cobertura ni licencia. Antes de automatizar se necesita una ficha de metadatos y un servicio concreto (WMS/WFS/ArcGIS o archivo geográfico), verificar conectividad y comprobar consultas sobre Lima. Datos distritales no deben atribuirse a un inmueble; un catastro tampoco demuestra disponibilidad de alquiler.
+
+Al inicio el proxy cloud rechazó las conexiones con CONNECT 403; después de guardar los dominios y reintentar, GEOIDEP y la API meteorológica respondieron HTTP 200. El clima real se verificó por la API local con proveedor Open-Meteo y hora de Lima. En GEOIDEP se identificaron los directorios WMS/REST y el catálogo nacional de metadatos; aún no se identificó e integró un conjunto de datos apto para ingresos, afluencia o disponibilidad de un inmueble. Para uso comercial del clima, revisa las condiciones y el plan del proveedor; el endpoint público aquí es para el prototipo.

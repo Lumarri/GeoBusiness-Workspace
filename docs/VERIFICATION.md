@@ -64,3 +64,15 @@ Pendientes: sincronización por cuenta, validación de calidad/cobertura en camp
 
 No comprobados: compilación C++/DLL en Windows, build completo de las imágenes Docker revisadas, rendimiento bajo carga, datos de demanda/alquileres, rutas peatonales y predicciones financieras. Existe una alternativa Python para ejecutar la aplicación sin biblioteca nativa; no se ha medido un factor de aceleración.
 - Con datos reales, Chromium dibuja el radio, el punto seleccionado y el mapa de calor de 234 registros tras la corrección del worker. La carga de las teselas públicas externas sigue mostrando un aviso en este entorno; esto se mantiene separado de las capas de análisis, que sí se dibujan. La prueba con teselas controladas no demuestra disponibilidad del proveedor público.
+
+## Ficha del lugar, precisión y clima
+
+- Backend: **48 pruebas aprobadas**, con PostGIS y motor nativo. Las nuevas pruebas cubren la caché meteorológica, datos nulos/corruptos, límites regionales y fallo del proveedor sin datos fabricados.
+- Frontend: **12 pruebas aprobadas**, TypeScript y compilación aprobados; escenarios incompletos frente a cero explícito, fuente obligatoria para disponibilidad/datos reportados y ajuste geográfico con coordenadas válidas.
+- Chromium: regresión ampliada aprobada con proveedor meteorológico simulado; ajuste del pin con teclado, clima automático de prueba, ficha guardada y recuperada en su punto y estado desconocido al abrir otro lugar. Se mantienen las comprobaciones de agrupación, comparación, exportación y navegación móvil.
+- Proveedor real: `/api/v1/weather` respondió HTTP 200, Open-Meteo, fecha local `2026-10-14T11:30`, 25,7 °C en la consulta de referencia durante esta ejecución. Es dato meteorológico de modelo/celda, no un sensor en el local ni una garantía de valor futuro.
+- GEOIDEP: portada y directorios de servicios descargados tras un bloqueo inicial CONNECT 403. Se identificaron WMS, REST y el catálogo de metadatos. **No se integró una capa oficial de ingresos, población o catastro**, ni una fuente inmobiliaria de ocupación/alquiler.
+
+Los reportes propios de disponibilidad/público/ingresos y el escenario de ventas no son datos oficiales ni predicciones automáticas. La ficha representa un punto de seis decimales y no distingue unidades catastrales ni pisos de un edificio. La validación de estos reportes con sus fuentes sigue a cargo del usuario.
+- La regresión final verifica una única consulta automática de negocios después de la selección estabilizada (3,2 segundos), con la opción de desactivarla. Abrir un snapshot no inicia una nueva consulta de negocios. Los errores requieren una nueva acción; no se reintenta automáticamente.
+- La lectura del subdominio `catalogo.geoidep.gob.pe` para metadatos sigue recibiendo CONNECT 403 en la última comprobación, aunque la portada/directorios y Open-Meteo ya respondieron correctamente. Su dominio quedó declarado en el borrador; no se considera verificado su acceso.

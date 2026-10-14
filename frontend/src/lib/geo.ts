@@ -22,3 +22,12 @@ export function withinRegion(point: Point, bbox: [number, number, number, number
     point.lng >= west && point.lng <= east && point.lat >= south && point.lat <= north;
 }
 
+
+// Move along a great circle; useful for accessible, small marker adjustments.
+export function offsetPoint(point: Point, bearingDegrees: number, meters = 1): Point {
+  const lat = point.lat * Math.PI / 180, lng = point.lng * Math.PI / 180;
+  const bearing = bearingDegrees * Math.PI / 180, d = meters / 6371008.8;
+  const nextLat = Math.asin(Math.max(-1, Math.min(1, Math.sin(lat) * Math.cos(d) + Math.cos(lat) * Math.sin(d) * Math.cos(bearing))));
+  const nextLng = lng + Math.atan2(Math.sin(bearing) * Math.sin(d) * Math.cos(lat), Math.cos(d) - Math.sin(lat) * Math.sin(nextLat));
+  return { lat: nextLat * 180 / Math.PI, lng: ((nextLng * 180 / Math.PI + 540) % 360) - 180 };
+}

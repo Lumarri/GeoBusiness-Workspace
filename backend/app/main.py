@@ -16,6 +16,7 @@ from app.db.cache import MemoryCache, PostgresCache
 from app.services.geocoding import GeocodingClient
 from app.services.nearby import NearbyService
 from app.services.overpass import OverpassClient, ProviderError
+from app.services.weather import WeatherClient
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +53,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 app.state.geocoding = GeocodingClient(
                     client, str(settings.geocoding_url), settings.region_bbox
                 )
+                app.state.weather = WeatherClient(client)
                 app.state.engine = engine
                 yield
         finally:
@@ -68,12 +70,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         expose_headers=["Retry-After"],
     )
     limiter = RateLimiter(settings.rate_limit_per_minute)
+    weather_limiter = RateLimiter(30)
 
     @app.middleware("http")
     async def limit_requests(request: Request, call_next):
-        if request.url.path in {"/api/v1/businesses/nearby", "/api/v1/locations/search"}:
+        if request.url.path in {
+            "/api/v1/businesses/nearby",
+            "/api/v1/locations/search",
+            "/api/v1/weather",
+        }:
             key = request.client.host if request.client else "unknown"
-            if not limiter.allow(key):
+            selected_limiter = weather_limiter if request.url.path == "/api/v1/weather" else limiter
+            if not selected_limiter.allow(key):
                 return JSONResponse(
                     status_code=429,
                     content={"detail": "Límite de consultas alcanzado. Espera un minuto."},

@@ -19,3 +19,13 @@ describe("analysis geometry", () => {
   });
 });
 
+
+import { offsetPoint } from "./geo";
+it("nudges a location east by approximately one meter without invalid coordinates", () => {
+  const p = offsetPoint({ lat: -12.12, lng: -77.03 }, 90);
+  expect(p.lng).toBeGreaterThan(-77.03);
+  expect(p.lat).toBeCloseTo(-12.12, 8);
+  const pole = offsetPoint({ lat: 90, lng: 180 }, 0);
+  expect(Number.isFinite(pole.lat) && Number.isFinite(pole.lng)).toBe(true);
+  expect(pole.lat).toBeLessThanOrEqual(90);
+});

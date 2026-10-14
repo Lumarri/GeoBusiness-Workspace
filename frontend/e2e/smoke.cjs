@@ -22,11 +22,19 @@ function snapshot(lat, lng, radius) {
     page.on('console', msg => { if (msg.type() === 'error') console.error('Browser:', msg.text()); });
     const errors = []; page.on('pageerror', error => errors.push(error.message));
     await page.route('https://tile.openstreetmap.org/**', route => route.fulfill({ contentType: 'image/png', body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGN4/eU9AAWcAs+9dDx1AAAAAElFTkSuQmCC', 'base64') }));
+    await page.route('**/api/v1/weather?**', route => route.fulfill({ json: { provider: 'Open-Meteo', timezone: 'America/Lima', retrieved_at: '2026-10-14T15:00:00Z', limitations: 'Modelo de prueba', current: { time: '2026-10-14T10:00', temperature_2m: 21, relative_humidity_2m: 80, precipitation: 0, wind_speed_10m: 12, weather_code: 1 } } }));
     let geocodingCalls = 0;
+    let nearbyCalls = 0;
     await page.route('**/api/v1/locations/search?**', route => { geocodingCalls++; return route.fulfill({ json: { results: [{ label: 'Parque Kennedy · prueba', lat: -12.1211, lng: -77.0300 }], provider: 'OpenStreetMap / Nominatim', license: 'ODbL-1.0' } }); });
-    await page.route('**/api/v1/businesses/nearby?**', route => { const p = new URL(route.request().url()).searchParams; return route.fulfill({ json: snapshot(Number(p.get('lat')), Number(p.get('lng')), Number(p.get('radius_m'))) }); });
+    await page.route('**/api/v1/businesses/nearby?**', route => { nearbyCalls++; const p = new URL(route.request().url()).searchParams; return route.fulfill({ json: snapshot(Number(p.get('lat')), Number(p.get('lng')), Number(p.get('radius_m'))) }); });
     await page.goto(process.env.E2E_BASE_URL || 'http://127.0.0.1:3000', { waitUntil: 'domcontentloaded', timeout: 90000 });
     await page.locator('.map-canvas[data-ready="true"]').waitFor({ timeout: 90000 });
+    await page.getByRole('checkbox', { name: /Consultar negocios al seleccionar/ }).uncheck();
+    await page.getByRole('button', { name: 'Ajustar punto', exact: true }).click();
+    const pin = page.getByRole('button', { name: /Pin del lugar/ });
+    await pin.focus(); await pin.press('ArrowRight');
+    await page.getByRole('button', { name: 'Ajustar punto', exact: true }).click();
+    await page.getByText('21 °C', { exact: true }).waitFor({ timeout: 30000 });
     for (const layer of ['Agrupaciones', 'Mapa de calor', 'Puntos']) {
       const button = page.getByRole('button', { name: layer, exact: true });
       await button.click(); assert.equal(await button.getAttribute('aria-pressed'), 'true');
@@ -43,7 +51,9 @@ function snapshot(lat, lng, radius) {
     await page.getByRole('button', { name: 'Parque Kennedy · prueba', exact: true }).click();
     assert.equal(geocodingCalls, 1);
     await page.getByRole('button', { name: '250 m', exact: true }).click();
-    await page.getByRole('button', { name: 'Analizar ubicación', exact: true }).click();
+    await page.getByRole('checkbox', { name: /Consultar negocios al seleccionar/ }).check();
+    await page.getByText('Densidad registrada', { exact: true }).waitFor({ timeout: 15000 });
+    assert.equal(nearbyCalls, 1, 'The selected point must trigger one debounced business query');
     await page.getByText('Densidad registrada', { exact: true }).waitFor();
     await page.getByRole('button', { name: 'Agrupaciones', exact: true }).click();
     const canvas = page.locator('.map-canvas');
@@ -63,6 +73,16 @@ function snapshot(lat, lng, radius) {
     await page.getByLabel('Nombre del análisis').fill('Local A');
     await page.getByRole('button', { name: 'Guardar análisis', exact: true }).click();
     await page.getByRole('button', { name: 'Abrir Local A', exact: true }).waitFor();
+    await page.locator('.site-editor summary').click();
+    await page.getByLabel('Estado reportado', { exact: true }).selectOption('available');
+    await page.getByLabel('Fuente y alcance', { exact: true }).fill('Contacto propietario · prueba');
+    await page.getByLabel('Fecha de la fuente', { exact: true }).fill('2026-10-14');
+    await page.getByLabel('Ticket supuesto (PEN/cliente)', { exact: true }).fill('20');
+    await page.getByLabel('Clientes supuestos por día', { exact: true }).fill('30');
+    await page.getByLabel('Días de operación al mes', { exact: true }).fill('26');
+    await page.getByRole('button', { name: 'Guardar ficha del lugar', exact: true }).click();
+    await page.getByText('Ficha guardada en este navegador para este punto.', { exact: true }).waitFor();
+
     await page.getByText('Densidad registrada', { exact: true }).waitFor();
     await page.getByRole('tab', { name: 'Calidad de datos', exact: true }).click();
     assert.equal(await page.locator('.metric-grid article').filter({ hasText: 'Con nombre o marca' }).locator('strong').innerText(), '100 %');
@@ -83,7 +103,10 @@ function snapshot(lat, lng, radius) {
     for (const name of ['Local A', 'Local B']) await page.locator('.saved-list li').filter({ has: page.getByRole('button', { name: `Abrir ${name}`, exact: true }) }).getByRole('checkbox').check();
     await page.getByRole('table').waitFor();
     assert.equal(await page.getByRole('columnheader').count(), 3);
+    await page.getByRole('button', { name: 'Abrir Local A', exact: true }).click();
+    await page.getByText('Disponible · reporte propio', { exact: true }).waitFor();
     await page.getByRole('button', { name: 'Abrir Local B', exact: true }).click();
+    await page.locator('#site-profile .metric-grid strong').filter({ hasText: /^Sin verificar$/ }).waitFor();
     await page.getByRole('button', { name: '500 m', exact: true }).click();
     await page.getByRole('button', { name: 'Analizar ubicación', exact: true }).click();
     await page.getByLabel('Nombre del análisis').fill('Local C');

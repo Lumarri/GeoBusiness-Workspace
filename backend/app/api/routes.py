@@ -37,3 +37,15 @@ async def search_locations(
         "provider": "OpenStreetMap / Nominatim",
         "license": "ODbL-1.0",
     }
+
+
+@router.get("/weather")
+async def weather(
+    request: Request,
+    lat: Annotated[float, Query(ge=-90, le=90, allow_inf_nan=False)],
+    lng: Annotated[float, Query(ge=-180, le=180, allow_inf_nan=False)],
+):
+    west, south, east, north = request.app.state.settings.region_bbox
+    if not (west <= lng <= east and south <= lat <= north):
+        raise HTTPException(422, detail="La ubicación está fuera de la región habilitada.")
+    return await request.app.state.weather.get(lat, lng)

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-export async function proxy(path: "/api/v1/config" | "/api/v1/businesses/nearby" | "/api/v1/locations/search", search = "") {
+export async function proxy(path: "/api/v1/config" | "/api/v1/businesses/nearby" | "/api/v1/locations/search" | "/api/v1/weather", search = "") {
   try {
     const base = process.env.API_BASE_URL ?? "http://localhost:8000";
     const response = await fetch(`${base.replace(/\/$/, "")}${path}${search}`, {

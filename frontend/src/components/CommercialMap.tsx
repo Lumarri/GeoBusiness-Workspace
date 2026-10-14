@@ -5,7 +5,7 @@ import * as maplibregl from "maplibre-gl";
 import type { GeoJSONSource, Map as LibreMap } from "maplibre-gl";
 import type { FeatureCollection, Point as GeoPoint } from "geojson";
 import { colors } from "@/lib/categories";
-import { radiusPolygon } from "@/lib/geo";
+import { offsetPoint, radiusPolygon } from "@/lib/geo";
 import type { Business, Point, Radius } from "@/lib/types";
 
 type Props = {
@@ -16,10 +16,12 @@ type Props = {
 export default function CommercialMap({ point, radius, businesses, focused, onSelect, onBusinessSelect }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LibreMap | null>(null);
+  const pinRef = useRef<maplibregl.Marker | null>(null);
   const callbacks = useRef({ onSelect, onBusinessSelect });
   const records = useRef(businesses);
   const initialPoint = useRef(point);
   const [mode, setMode] = useState<"points" | "clusters" | "heat">("points");
+  const [editPoint, setEditPoint] = useState(false);
   const [showRadius, setShowRadius] = useState(true);
   const [ready, setReady] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
@@ -51,6 +53,20 @@ export default function CommercialMap({ point, radius, businesses, focused, onSe
       return;
     }
     mapRef.current = map;
+    const pin = document.createElement("button");
+    pin.type = "button"; pin.className = "location-pin";
+    pin.textContent = "＋"; pin.title = "Arrastra para ajustar el lugar";
+    pin.setAttribute("aria-label", "Pin del lugar. Usa las flechas para ajustar aproximadamente un metro.");
+    const marker = new maplibregl.Marker({ element: pin, draggable: false }).setLngLat([initialPoint.current.lng, initialPoint.current.lat]).addTo(map);
+    pinRef.current = marker;
+    marker.on("dragend", () => { const p = marker.getLngLat().wrap(); callbacks.current.onSelect({ lat: p.lat, lng: p.lng }); });
+    pin.addEventListener("keydown", event => {
+      if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) return;
+      event.preventDefault(); event.stopPropagation();
+      const p = marker.getLngLat();
+      const bearing = event.key === "ArrowUp" ? 0 : event.key === "ArrowRight" ? 90 : event.key === "ArrowDown" ? 180 : 270;
+      callbacks.current.onSelect(offsetPoint({ lat: p.lat, lng: p.lng }, bearing));
+    });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-left");
     map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
     map.addControl(new maplibregl.AttributionControl({ compact: false }), "bottom-right");
@@ -80,6 +96,7 @@ export default function CommercialMap({ point, radius, businesses, focused, onSe
     });
     map.on("error", event => { console.error("MapLibre:", event.error.message); setMapError("No se pudo cargar una capa del mapa. Los resultados siguen disponibles; verifica la conexión o usa las coordenadas."); });
     map.on("click", event => {
+      if ((event.originalEvent.target as HTMLElement)?.closest?.(".location-pin")) return;
       if (!map.getLayer("business-points")) return;
       const clusters = map.queryRenderedFeatures(event.point, { layers: ["business-clusters"] });
       if (clusters.length) {
@@ -110,12 +127,13 @@ export default function CommercialMap({ point, radius, businesses, focused, onSe
     map.on("mouseleave", "business-points", () => { map.getCanvas().style.cursor = "crosshair"; });
     const observer = new ResizeObserver(() => map.resize());
     observer.observe(container.current);
-    return () => { observer.disconnect(); map.remove(); mapRef.current = null; };
+    return () => { observer.disconnect(); marker.remove(); pinRef.current = null; map.remove(); mapRef.current = null; };
   }, []);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
+    pinRef.current?.setLngLat([point.lng, point.lat]);
     (map.getSource("radius") as GeoJSONSource).setData(radiusPolygon(point, radius));
     (map.getSource("selected") as GeoJSONSource).setData({ type: "Feature", properties: {}, geometry: { type: "Point", coordinates: [point.lng, point.lat] } });
     const distance = Math.abs(map.getCenter().lng - point.lng) + Math.abs(map.getCenter().lat - point.lat);
@@ -157,10 +175,19 @@ export default function CommercialMap({ point, radius, businesses, focused, onSe
     ] as const) map.setLayoutProperty(layer, "visibility", visible ? "visible" : "none");
   }, [mode, showRadius, ready]);
 
+  useEffect(() => {
+    const marker = pinRef.current;
+    if (!marker) return;
+    marker.setDraggable(editPoint);
+    marker.getElement().style.pointerEvents = editPoint ? "auto" : "none";
+    marker.getElement().tabIndex = editPoint ? 0 : -1;
+  }, [editPoint, ready]);
+
   return <div className="map-stage">
     <div ref={container} className="map-canvas" data-ready={ready} aria-label="Mapa de Lima. Selecciona una ubicación con clic; también puedes usar el formulario de coordenadas." />
     <div className="map-layer-controls" role="group" aria-label="Capas del mapa">
       {([["points", "Puntos"], ["clusters", "Agrupaciones"], ["heat", "Mapa de calor"]] as const).map(([value, label]) => <button key={value} aria-pressed={mode === value} onClick={() => setMode(value)}>{label}</button>)}
+      <button aria-pressed={editPoint} onClick={() => setEditPoint(value => !value)}>Ajustar punto</button>
       <button aria-pressed={showRadius} onClick={() => setShowRadius(value => !value)}>Radio</button>
       {mode === "heat" && <span className="heatmap-note">Concentración relativa de registros; cambia con el zoom. No es afluencia.</span>}
       <button onClick={() => mapRef.current?.flyTo({ center: [point.lng, point.lat], zoom: 14.6 })}>Centrar ubicación</button>

@@ -274,3 +274,19 @@ h1 span { color: var(--green); }
 .heatmap-note { width: 100%; font-size: 11px; color: #53675f; padding: 4px 6px; }
 
 .map-error { top: auto; bottom: 75px; left: 65px; }
+.site-profile { padding: 24px; margin: 24px 0; border: 1px solid #dce7e3; border-radius: 16px; background: white; scroll-margin-top: 20px; }
+.site-profile p { font-size: 13px; line-height: 1.6; color: #53675f; }
+.site-profile h2 { font-size: 24px; margin: 6px 0; }
+.site-editor { margin-top: 18px; }
+.site-editor summary { padding: 12px; cursor: pointer; color: #155d50; font-weight: 600; background: #f3f7f5; border-radius: 8px; }
+.site-form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 18px 0; }
+.site-form-grid label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #53675f; }
+.site-form-grid input, .site-form-grid select, .site-form-grid textarea { width: 100%; padding: 10px; border: 1px solid #cadbd5; border-radius: 8px; background: white; }
+.site-notes { grid-column: 1 / -1; }
+.site-profile button { padding: 10px 14px; border: 1px solid #cadbd5; border-radius: 8px; color: #155d50; background: #f3f7f5; cursor: pointer; }
+.site-profile button:disabled { opacity: .5; cursor: default; }
+.location-pin { width: 28px; height: 28px; padding: 0; border: 3px solid white; background: #155d50; color: white; border-radius: 50%; cursor: grab; box-shadow: 0 2px 10px #14332c60; font-size: 18px; }
+.location-pin:focus-visible { outline: 3px solid #e9b35b; outline-offset: 3px; }
+@media (max-width: 700px) { .site-form-grid { grid-template-columns: 1fr; } }
+.auto-query { display: flex; align-items: center; gap: 8px; padding: 12px 20px; font-size: 12px; color: #53675f; border-top: 1px solid #dce7e3; }
+.site-profile p, .site-profile strong { overflow-wrap: anywhere; }
