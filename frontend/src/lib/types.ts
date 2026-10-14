@@ -15,11 +15,22 @@ export const businessSchema = z.object({
 });
 export type Business = z.infer<typeof businessSchema>;
 
+export const analysisSchema = z.object({
+  methodology_version: z.literal("territorial-v1"), scope: z.literal("whole_radius"),
+  area_km2: z.number().positive(), records_per_km2: z.number().nonnegative(),
+  diversity_index: z.number().min(0).max(1).nullable(), dominant_category: categorySchema.nullable(),
+  dominant_share: z.number().min(0).max(1).nullable(), mean_nearest_neighbor_m: z.number().nonnegative().nullable(),
+  share_with_neighbor_50m: z.number().min(0).max(1).nullable(), named_share: z.number().min(0).max(1).nullable(),
+  addressed_share: z.number().min(0).max(1).nullable(), hours_share: z.number().min(0).max(1).nullable(),
+  spatial_engine: z.enum(["cpp", "python", "not_computed"]),
+});
+
 export const nearbySchema = z.object({
   location: z.object({ lat: z.number(), lng: z.number() }), radius_m: z.union([z.literal(250), z.literal(500), z.literal(1000)]),
   region: z.string(), total_in_radius: z.number().int().nonnegative(), total_filtered: z.number().int().nonnegative(),
   categories: z.array(z.object({ category: categorySchema, label: z.string(), count: z.number().int().nonnegative() })),
   businesses: z.array(businessSchema),
+  analysis: analysisSchema.optional(), // Keep old saved snapshots readable.
   source: z.object({
     provider: z.literal("OpenStreetMap / Overpass"), license: z.literal("ODbL-1.0"),
     retrieved_at: z.string().datetime({ offset: true }), osm_base_timestamp: z.string().nullable(),

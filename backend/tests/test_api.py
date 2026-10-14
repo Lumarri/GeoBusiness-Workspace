@@ -37,9 +37,16 @@ def test_contract_and_health(osm_payload, monkeypatch):
         assert response.status_code == 200
         data = response.json()
         assert data["total_in_radius"] == 4
+        assert data["analysis"]["scope"] == "whole_radius"
+        assert data["analysis"]["records_per_km2"] > 0
         assert data["source"]["provider"] == "OpenStreetMap / Overpass"
         assert data["source"]["distance_method"] == "haversine_straight_line"
         assert client.get("/api/v1/businesses/nearby", params=params).json()["source"]["cache_hit"]
+        filtered = client.get(
+            "/api/v1/businesses/nearby", params={**params, "category": "food"}
+        ).json()
+        assert filtered["analysis"] == data["analysis"]
+        assert filtered["total_filtered"] < data["total_in_radius"]
 
 
 def test_provider_failure_propagates_with_retry_after(monkeypatch):

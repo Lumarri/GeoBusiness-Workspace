@@ -8,7 +8,9 @@
     "start": "next start --hostname 0.0.0.0",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:e2e": "node e2e/smoke.cjs"
+    "test:e2e": "node e2e/smoke.cjs",
+    "predev": "node scripts/prepare-map-worker.cjs",
+    "prebuild": "node scripts/prepare-map-worker.cjs"
   },
   "dependencies": {
     "lucide-react": "0.468.0",

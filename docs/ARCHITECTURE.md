@@ -78,3 +78,11 @@ Las dependencias de redes y estadística están declaradas en el extra Python `a
 `AddressSearch.tsx` envía una búsqueda explícita al proxy `/api/v1/locations/search`. `GeocodingClient` limita Nominatim a una solicitud por segundo por proceso, cachea hasta 128 búsquedas durante 24 horas y restringe resultados a Perú y al bbox. Es un servicio de desarrollo de bajo volumen, no un geocodificador distribuido. No hay autocompletado.
 
 `AnalysisLibrary.tsx` guarda hasta diez respuestas completas con nombre y fecha en un formato versionado y validado por Zod. Solo actualiza el estado si la escritura de localStorage tiene éxito. Un formato ilegible se conserva y bloquea escrituras para evitar pérdida silenciosa. La comparación requiere 2–3 snapshots de la misma región y radio, muestra fecha/TTL y no asigna puntajes. Abrir restaura el snapshot; actualizar requiere una nueva consulta explícita.
+
+## Indicadores territoriales y motor nativo
+
+La API calcula `analysis` desde todos los registros del snapshot espacial, antes de aplicar filtros de categoría/texto. Un worker de Python ejecuta la agregación fuera del event loop; los cálculos entre vecinos se delegan a C++17 mediante ABI C/ctypes cuando la biblioteca local está disponible. La función nativa es independiente del estado de la API, valida coordenadas y tamaño y usa Haversine con el mismo radio terrestre que Python. Sin biblioteca se usa la referencia Python. No se devuelve una puntuación económica.
+
+La complejidad de vecinos es O(n²), acotada a 2–2.000 registros; las métricas correspondientes son nulas fuera de ese rango. La densidad y la diversidad siguen usando el conjunto completo. La diversidad se normaliza por log(6); la categoría predominante solo es única cuando no hay empate. Las métricas de presencia de etiquetas no son una estimación de cobertura de negocios reales.
+
+El mapa mantiene fuentes separadas para puntos y agrupaciones, una capa de calor relativa y visibilidad independiente del radio. La inicialización usa `style.load` para que los overlays no esperen a que finalicen las descargas raster. El panel conserva snapshots anteriores sin `analysis`, indica que requieren una nueva consulta y permite exportar el contrato actual como JSON.

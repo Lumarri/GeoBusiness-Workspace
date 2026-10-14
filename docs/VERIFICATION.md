@@ -53,3 +53,14 @@ Ejecutada en el entorno de desarrollo el 14 de octubre de 2026:
 
 Pendientes: sincronización por cuenta, validación de calidad/cobertura en campo, carga multiusuario, build completo de Compose, despliegue público y recuperación de backups. La persistencia en un volumen local no demuestra restauración en una máquina nueva ni publicación del entorno.
 - Flujo real en Chromium: búsqueda de Parque Kennedy, selección, consulta y guardado completados, con 239 registros en el punto devuelto por el geocodificador; sin errores JavaScript. El mapa creó su canvas, pero mostró un error de carga de teselas. Una descarga individual de tesela desde el servidor respondió HTTP 200; la visualización cartográfica real en este navegador queda pendiente de diagnóstico. No se considera cubierta por la regresión de teselas sintéticas.
+
+## Ampliación territorial y C++
+
+- Backend: **43 pruebas aprobadas**, sin omisiones, con PostGIS y biblioteca C++ compilada. Incluye equivalencia C++/Python, geometría, coordenadas inválidas, registros coincidentes, límite de 2.000, ausencia de datos, empates y conservación del alcance completo al filtrar.
+- Frontend: **8 pruebas aprobadas**; TypeScript y compilación final de producción aprobados.
+- Chromium: regresión ampliada aprobada con teselas y proveedores sintéticos válidos: modos de mapa, ocultar radio, agrupación de dos registros y zoom con clic, apartados de indicadores/calidad/metodología, exportación JSON, snapshots, comparación y móvil. Se exige que no haya errores de capas ni excepciones JavaScript.
+- Se corrigió la carga del módulo worker de MapLibre 6 sirviéndolo desde `public/maplibre`. Su respuesta HTTP 200 es JavaScript y coincide byte a byte con el artefacto del paquete instalado. Los pasos npm predev/prebuild y la imagen/arranque standalone preparan estos archivos generados.
+- Integración real del proxy/API con C++: HTTP 200, `analysis.spatial_engine=cpp`, 234 registros en la consulta de referencia de 250 m y media de vecino de 9,2 m en este snapshot. No representa un recorrido ni una estimación económica.
+
+No comprobados: compilación C++/DLL en Windows, build completo de las imágenes Docker revisadas, rendimiento bajo carga, datos de demanda/alquileres, rutas peatonales y predicciones financieras. Existe una alternativa Python para ejecutar la aplicación sin biblioteca nativa; no se ha medido un factor de aceleración.
+- Con datos reales, Chromium dibuja el radio, el punto seleccionado y el mapa de calor de 234 registros tras la corrección del worker. La carga de las teselas públicas externas sigue mostrando un aviso en este entorno; esto se mantiene separado de las capas de análisis, que sí se dibujan. La prueba con teselas controladas no demuestra disponibilidad del proveedor público.

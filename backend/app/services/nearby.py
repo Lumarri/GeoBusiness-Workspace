@@ -1,6 +1,9 @@
+import asyncio
+
 from app.core.config import Settings
 from app.db.cache import Cache, cache_key, make_entry
 from app.schemas import NearbyQuery, NearbyResponse, SourceMetadata
+from app.services.analytics import analyze
 from app.services.businesses import category_counts, normalize_search, parse_businesses
 from app.services.overpass import OverpassClient
 
@@ -39,6 +42,7 @@ class NearbyService:
             total_filtered=len(filtered),
             categories=category_counts(records),
             businesses=filtered,
+            analysis=await asyncio.to_thread(analyze, records, query.radius_m),
             source=SourceMetadata(
                 retrieved_at=entry.retrieved_at,
                 cache_expires_at=entry.expires_at,

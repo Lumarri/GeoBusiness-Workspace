@@ -3,21 +3,40 @@ const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
 function snapshot(lat, lng, radius) {
   const now = new Date().toISOString();
-  return { location: { lat, lng }, radius_m: radius, region: 'Lima Metropolitana', total_in_radius: 1, total_filtered: 1,
+  const result = { location: { lat, lng }, radius_m: radius, region: 'Lima Metropolitana', total_in_radius: 1, total_filtered: 1,
     categories: [{ category: 'food', label: 'Restaurantes y cafés', count: 1 }],
     businesses: [{ osm_id: 'node/1', osm_type: 'node', name: 'Café de prueba', category: 'food', category_label: 'Restaurantes y cafés', subtype: 'cafe', lat, lng, distance_m: 0, location_method: 'node', address: null, opening_hours: null, osm_url: 'https://www.openstreetmap.org/node/1', evidence: 'osm_record' }],
+    analysis: { methodology_version: 'territorial-v1', scope: 'whole_radius', area_km2: Math.PI*(radius/1000)**2, records_per_km2: 1/(Math.PI*(radius/1000)**2), diversity_index: 0, dominant_category: 'food', dominant_share: 1, mean_nearest_neighbor_m: null, share_with_neighbor_50m: null, named_share: 1, addressed_share: 0, hours_share: 0, spatial_engine: 'not_computed' },
     source: { provider: 'OpenStreetMap / Overpass', license: 'ODbL-1.0', retrieved_at: now, osm_base_timestamp: now, cache_hit: false, cache_expires_at: new Date(Date.now()+86400000).toISOString(), distance_method: 'haversine_straight_line', limitations: ['Datos sintéticos de pruebas.'] } };
+  result.businesses.push({ ...result.businesses[0], osm_id: 'node/2', name: 'Farmacia de prueba', category: 'health', category_label: 'Salud y farmacias', subtype: 'pharmacy', lat: lat + 0.0001, distance_m: 11.1 });
+  result.total_in_radius = result.total_filtered = 2;
+  result.categories.push({ category: 'health', label: 'Salud y farmacias', count: 1 });
+  Object.assign(result.analysis, { records_per_km2: 2/(Math.PI*(radius/1000)**2), diversity_index: Math.log(2)/Math.log(6), dominant_category: null, dominant_share: 0.5, mean_nearest_neighbor_m: 11.1, share_with_neighbor_50m: 1, spatial_engine: 'python' });
+  return result;
 }
 (async () => {
   const browser = await chromium.launch({ headless: true, ...(process.env.BROWSER_EXECUTABLE ? { executablePath: process.env.BROWSER_EXECUTABLE } : {}), args: ['--enable-unsafe-swiftshader'] });
+  let page;
   try {
-    const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+    page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+    page.on('console', msg => { if (msg.type() === 'error') console.error('Browser:', msg.text()); });
     const errors = []; page.on('pageerror', error => errors.push(error.message));
-    await page.route('https://tile.openstreetmap.org/**', route => route.fulfill({ contentType: 'image/png', body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aWZkAAAAASUVORK5CYII=', 'base64') }));
+    await page.route('https://tile.openstreetmap.org/**', route => route.fulfill({ contentType: 'image/png', body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGN4/eU9AAWcAs+9dDx1AAAAAElFTkSuQmCC', 'base64') }));
     let geocodingCalls = 0;
     await page.route('**/api/v1/locations/search?**', route => { geocodingCalls++; return route.fulfill({ json: { results: [{ label: 'Parque Kennedy · prueba', lat: -12.1211, lng: -77.0300 }], provider: 'OpenStreetMap / Nominatim', license: 'ODbL-1.0' } }); });
     await page.route('**/api/v1/businesses/nearby?**', route => { const p = new URL(route.request().url()).searchParams; return route.fulfill({ json: snapshot(Number(p.get('lat')), Number(p.get('lng')), Number(p.get('radius_m'))) }); });
-    await page.goto(process.env.E2E_BASE_URL || 'http://127.0.0.1:3000');
+    await page.goto(process.env.E2E_BASE_URL || 'http://127.0.0.1:3000', { waitUntil: 'domcontentloaded', timeout: 90000 });
+    await page.locator('.map-canvas[data-ready="true"]').waitFor({ timeout: 90000 });
+    for (const layer of ['Agrupaciones', 'Mapa de calor', 'Puntos']) {
+      const button = page.getByRole('button', { name: layer, exact: true });
+      await button.click(); assert.equal(await button.getAttribute('aria-pressed'), 'true');
+    }
+    const radiusLayer = page.getByRole('button', { name: 'Radio', exact: true });
+    await radiusLayer.click(); assert.equal(await radiusLayer.getAttribute('aria-pressed'), 'false');
+    await radiusLayer.click();
+    await page.getByRole('tab', { name: 'Metodología', exact: true }).click();
+    await page.getByText('Qué calculamos', { exact: true }).waitFor();
+    await page.getByRole('tab', { name: 'Indicadores', exact: true }).click();
     await page.getByLabel('Buscar dirección o lugar en Lima').fill('Kennedy');
     assert.equal(geocodingCalls, 0, 'Typing must not query the geocoder');
     await page.getByRole('button', { name: 'Buscar dirección', exact: true }).click();
@@ -25,9 +44,32 @@ function snapshot(lat, lng, radius) {
     assert.equal(geocodingCalls, 1);
     await page.getByRole('button', { name: '250 m', exact: true }).click();
     await page.getByRole('button', { name: 'Analizar ubicación', exact: true }).click();
+    await page.getByText('Densidad registrada', { exact: true }).waitFor();
+    await page.getByRole('button', { name: 'Agrupaciones', exact: true }).click();
+    const canvas = page.locator('.map-canvas');
+    const box = await canvas.boundingBox();
+    // GeoJSON clustering is asynchronous: move the pointer after worker updates.
+    const clusterTip = page.locator('.maplibregl-popup-content').filter({ hasText: '2 registros' });
+    for (let attempt = 0; attempt < 40 && !(await clusterTip.count()); attempt++) {
+      await canvas.hover({ position: { x: 5, y: 5 } });
+      await canvas.hover({ position: { x: box.width/2, y: box.height/2 } });
+      await page.waitForTimeout(250);
+    }
+    await clusterTip.waitFor({ timeout: 10000 });
+    const scaleBefore = await page.locator('.maplibregl-ctrl-scale').innerText();
+    await canvas.click({ position: { x: box.width/2, y: box.height/2 } });
+    await page.waitForFunction(before => document.querySelector('.maplibregl-ctrl-scale').textContent !== before, scaleBefore);
+    await page.getByRole('button', { name: 'Puntos', exact: true }).click();
     await page.getByLabel('Nombre del análisis').fill('Local A');
     await page.getByRole('button', { name: 'Guardar análisis', exact: true }).click();
     await page.getByRole('button', { name: 'Abrir Local A', exact: true }).waitFor();
+    await page.getByText('Densidad registrada', { exact: true }).waitFor();
+    await page.getByRole('tab', { name: 'Calidad de datos', exact: true }).click();
+    assert.equal(await page.locator('.metric-grid article').filter({ hasText: 'Con nombre o marca' }).locator('strong').innerText(), '100 %');
+    await page.getByRole('tab', { name: 'Indicadores', exact: true }).click();
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Exportar análisis JSON', exact: true }).click();
+    assert.equal((await downloadPromise).suggestedFilename(), 'geobusiness-250m.json');
     await page.locator('.coordinate-row summary').click();
     await page.getByLabel('Latitud', { exact: true }).fill('-12.12');
     await page.getByLabel('Longitud', { exact: true }).fill('-77.031');
@@ -56,7 +98,14 @@ function snapshot(lat, lng, radius) {
     await page.getByRole('button', { name: 'Abrir herramientas', exact: true }).click();
     await page.getByRole('button', { name: 'Comparar ubicaciones', exact: true }).click();
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false, 'Mobile page must not overflow horizontally');
+    assert.equal(await page.locator('.map-error').count(), 0, 'Map layers and test tiles must load without errors');
     assert.deepEqual(errors, [], 'Unexpected browser runtime errors');
-    console.log('PASS: address search, coordinates, saved snapshots after reload, comparison, incompatible radius, deletion and mobile navigation. Synthetic provider responses.');
+    console.log('PASS: dynamic map controls and territorial tabs; address search, coordinates, saved snapshots after reload, comparison, incompatible radius, deletion and mobile navigation. Synthetic provider responses.');
+  } catch (error) {
+    if (page) {
+      await page.screenshot({ path: process.env.E2E_FAILURE_SCREENSHOT || '/tmp/geobusiness-e2e-failure.png', fullPage: true }).catch(() => {});
+      console.error('Map messages:', await page.locator('.map-error').allTextContents());
+    }
+    throw error;
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

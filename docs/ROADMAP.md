@@ -32,3 +32,9 @@ Diseñar una interfaz `RecommendationProvider` con un contrato común: entrada c
 
 Autenticación, autorizaciones por usuario, límites distribuidos, Alembic, observabilidad, backups/restauración verificados, política de cobertura/actualización OSM, proveedor cartográfico adecuado y revisión de licencias. Validar con ubicaciones de Lima contrastadas en campo antes de interpretar puntuaciones como información útil para inversión.
 
+
+## Entregado: indicadores y capas espaciales
+
+Análisis descriptivo por radio: densidad, diversidad, predominio de categoría sin resolver empates arbitrariamente, vecinos geográficos y presencia de datos. Motor C++17 con referencia Python y trabajo acotado; apartados de indicadores/calidad/metodología, exportación JSON y comparación ampliada. Mapa con puntos, agrupaciones, calor relativo y controles de radio/centrado.
+
+Siguen pendientes las redes peatonales/viales, tiempos de recorrido, datos de demanda/alquileres, simulación financiera y recomendaciones económicas. Los indicadores de registros no sustituyen esos módulos.

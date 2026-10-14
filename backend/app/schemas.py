@@ -80,6 +80,22 @@ class SourceMetadata(BaseModel):
     ]
 
 
+class TerritorialAnalysis(BaseModel):
+    methodology_version: str = "territorial-v1"
+    scope: Literal["whole_radius"] = "whole_radius"
+    area_km2: float
+    records_per_km2: float
+    diversity_index: float | None
+    dominant_category: Category | None
+    dominant_share: float | None
+    mean_nearest_neighbor_m: float | None
+    share_with_neighbor_50m: float | None
+    named_share: float | None
+    addressed_share: float | None
+    hours_share: float | None
+    spatial_engine: Literal["cpp", "python", "not_computed"]
+
+
 class NearbyResponse(BaseModel):
     location: dict[str, float]
     radius_m: int
@@ -89,3 +105,4 @@ class NearbyResponse(BaseModel):
     categories: list[CategoryCount]
     businesses: list[Business]
     source: SourceMetadata
+    analysis: TerritorialAnalysis

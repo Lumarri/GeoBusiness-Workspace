@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, ArrowUpRight, Building2, ChevronDown, ChevronRight, CircleHelp, Crosshair, Layers, Map, MapPin, Menu, Plus, Search, ShieldCheck, SlidersHorizontal, Sparkles, Wallet, X } from "lucide-react";
 import AddressSearch from "./AddressSearch";
 import AnalysisLibrary from "./AnalysisLibrary";
+import TerritorialDashboard from "./TerritorialDashboard";
 import AnalysisPanel from "./AnalysisPanel";
 import { ApiError, getNearby, getRegion } from "@/lib/api";
 import { filterBusinesses } from "@/lib/businesses";
@@ -111,7 +112,7 @@ export default function Workspace() {
       <a href="/" className="brand" aria-label="GeoBusiness AI, inicio"><div className="brand-mark"><Layers size={24} strokeWidth={1.8} /></div><div>GeoBusiness<span>INTELLIGENCE PLATFORM <i>AI</i></span></div></a>
       <button className="new-analysis" onClick={newAnalysis}><Plus size={16} /> Nuevo análisis</button>
       <span className="sidebar-label">ESPACIO DE TRABAJO</span>
-      <nav className="main-nav"><button className="active" onClick={() => setSidebarOpen(false)}><Map size={18} /> Explorador territorial <ChevronRight size={14} /></button><button onClick={() => { setSidebarOpen(false); document.getElementById("saved-analyses")?.scrollIntoView({ behavior: "smooth" }); }}><SlidersHorizontal size={18} /> Comparar ubicaciones</button><button disabled title="Disponible en una siguiente etapa"><Wallet size={18} /> Simulador financiero <span>Próx.</span></button><button disabled title="Disponible en una siguiente etapa"><Sparkles size={18} /> Asistente comercial <span>Próx.</span></button></nav>
+      <nav className="main-nav"><button className="active" onClick={() => setSidebarOpen(false)}><Map size={18} /> Explorador territorial <ChevronRight size={14} /></button><button onClick={() => { setSidebarOpen(false); document.getElementById("territorial-dashboard")?.scrollIntoView({ behavior: "smooth" }); }}><Building2 size={18} /> Análisis territorial</button><button onClick={() => { setSidebarOpen(false); document.getElementById("saved-analyses")?.scrollIntoView({ behavior: "smooth" }); }}><SlidersHorizontal size={18} /> Comparar ubicaciones</button><button disabled title="Disponible en una siguiente etapa"><Wallet size={18} /> Simulador financiero <span>Próx.</span></button><button disabled title="Disponible en una siguiente etapa"><Sparkles size={18} /> Asistente comercial <span>Próx.</span></button></nav>
       <div className="sidebar-divider" />
       <span className="sidebar-label">EXPLORAR LIMA</span>
       <div className="preset-list">{presets.map(preset => <button key={preset.name} onClick={() => selectPoint(preset.point)}><MapPin size={15} /><div><strong>{preset.name}</strong><small>{preset.description}</small></div><ArrowUpRight size={13} /></button>)}</div>
@@ -119,7 +120,7 @@ export default function Workspace() {
     </aside>
     {sidebarOpen && <button className="sidebar-backdrop" aria-label="Cerrar herramientas" onClick={() => setSidebarOpen(false)} />}
     <main className="main-workspace">
-      <header className="topbar"><div className="breadcrumb"><button className="mobile-menu icon-button" aria-label="Abrir herramientas" onClick={() => setSidebarOpen(true)}><Menu size={20} /></button><span>Workspace</span><ChevronRight size={13} /><strong>Explorador territorial</strong></div><div className="topbar-right"><span className="pilot-badge">MVP · ETAPA 01</span><span className="region-badge"><MapPin size={13} /> Lima, PE</span><div className="avatar" aria-label="GeoBusiness">G</div></div></header>
+      <header className="topbar"><div className="breadcrumb"><button className="mobile-menu icon-button" aria-label="Abrir herramientas" onClick={() => setSidebarOpen(true)}><Menu size={20} /></button><span>Workspace</span><ChevronRight size={13} /><strong>Explorador territorial</strong></div><div className="topbar-right"><span className="pilot-badge">EXPLORACIÓN · ANÁLISIS</span><span className="region-badge"><MapPin size={13} /> Lima, PE</span><div className="avatar" aria-label="GeoBusiness">G</div></div></header>
       <section className="workspace-intro"><div><span className="eyebrow">INTELIGENCIA PARA TU PRÓXIMO NEGOCIO</span><h1>Encuentra tu lugar en la ciudad<span>.</span></h1><p>Explora el entorno comercial antes de dar el siguiente paso.</p></div><button className="method-button" onClick={() => dialog.current?.showModal()}><ShieldCheck size={16} /> Fuentes transparentes <ArrowUpRight size={14} /></button></section>
       <div className="explorer-layout"><section className="map-panel" aria-label="Explorador comercial">
         <AddressSearch onSelect={selectPoint} /><div className="map-toolbar"><div className="search-field"><Search size={17} /><input aria-label="Buscar en los establecimientos consultados" placeholder="Buscar en los establecimientos consultados…" value={search} maxLength={100} onChange={event => setSearch(event.target.value)} />{search && <button aria-label="Limpiar búsqueda" onClick={() => setSearch("")}><X size={14} /></button>}</div><label className="category-select"><SlidersHorizontal size={15} /><select aria-label="Categoría comercial" value={category} onChange={event => setCategory(event.target.value as Category | "all")}><option value="all">Todas las categorías</option>{categories.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</select><ChevronDown size={13} /></label></div>
@@ -129,6 +130,7 @@ export default function Workspace() {
         {(error || configError) && <div className="query-error" role="alert"><CircleHelp size={16} /><span>{error ?? "No se pudo conectar con la API. Inicia el backend para consultar establecimientos."}</span>{configError && <button onClick={() => setConfigAttempt(value => value + 1)}>Verificar conexión</button>}</div>}
         <div className="map-legend"><span>CAPAS COMERCIALES</span>{categories.map(item => <button key={item.id} className={category === item.id ? "active" : ""} onClick={() => setCategory(category === item.id ? "all" : item.id)} aria-pressed={category === item.id}><i style={{ background: item.color }} />{item.short}</button>)}</div>
       </section><AnalysisPanel result={result} visible={visible} loading={loading} point={point} radius={radius} focused={focused} onFocus={setFocused} onMethodology={() => dialog.current?.showModal()} onResetFilters={() => { setCategory("all"); setSearch(""); }} /></div>
+      <TerritorialDashboard result={result} />
       <AnalysisLibrary result={result} onOpen={analysis => {
         selectPoint(analysis.result.location); setRadius(analysis.result.radius_m);
         setCategory("all"); setSearch(""); setResult(analysis.result);

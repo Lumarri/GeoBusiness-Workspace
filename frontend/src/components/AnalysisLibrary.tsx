@@ -41,6 +41,9 @@ export default function AnalysisLibrary({ result, onOpen }: { result: NearbyResu
       <tr><th scope="row">Fecha de consulta</th>{comparison.map(a => <td key={a.id}>{new Date(a.result.source.retrieved_at).toLocaleString("es-PE")}</td>)}</tr>
       <tr><th scope="row">Vigencia de caché</th>{comparison.map(a => <td key={a.id}>{Date.parse(a.result.source.cache_expires_at) <= Date.now() ? "Vencida; vuelve a consultar" : "Dentro del TTL de consulta"}</td>)}</tr>
       <tr><th scope="row">Total de registros</th>{comparison.map(a => <td key={a.id}>{a.result.total_in_radius}</td>)}</tr>
+      <tr><th scope="row">Densidad (registros/km²)</th>{comparison.map(a => <td key={a.id}>{a.result.analysis?.records_per_km2.toLocaleString("es-PE") ?? "Consulta de versión anterior"}</td>)}</tr>
+      <tr><th scope="row">Diversidad (0–1)</th>{comparison.map(a => <td key={a.id}>{a.result.analysis?.diversity_index?.toFixed(2) ?? "Sin dato"}</td>)}</tr>
+      <tr><th scope="row">Vecino próximo (media)</th>{comparison.map(a => <td key={a.id}>{a.result.analysis?.mean_nearest_neighbor_m != null ? `${a.result.analysis.mean_nearest_neighbor_m} m` : "Sin dato"}</td>)}</tr>
       {categories.map(c => <tr key={c.id}><th scope="row">{c.label}</th>{comparison.map(a => <td key={a.id}>{a.result.categories.find(item => item.category === c.id)?.count ?? "Sin dato"}</td>)}</tr>)}
     </tbody></table><p>La cobertura OSM puede variar entre ubicaciones y fechas. Estos conteos no miden demanda, competidores directos ni rentabilidad.</p></div>}
   </section>;

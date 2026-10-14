@@ -250,3 +250,27 @@ h1 span { color: var(--green); }
 .comparison-table caption { text-align: left; font-weight: 600; padding: 12px 0; }
 .comparison-table th, .comparison-table td { text-align: left; border-bottom: 1px solid #dce7e3; padding: 10px; font-size: 13px; }
 @media (max-width: 640px) { .address-input, .saved-list li { flex-direction: column; align-items: stretch; } }
+
+.territorial-dashboard { margin: 24px 0; padding: 24px; border: 1px solid #dce7e3; border-radius: 16px; background: #fff; scroll-margin-top: 20px; }
+.dashboard-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.dashboard-heading h2 { font-size: 24px; margin: 6px 0; }
+.territorial-dashboard p { font-size: 13px; color: #53675f; line-height: 1.65; }
+.dashboard-export, .dashboard-tabs button { padding: 10px 14px; border: 1px solid #dce7e3; border-radius: 8px; background: #f5f9f7; color: #155d50; cursor: pointer; }
+.dashboard-export:disabled { opacity: .5; cursor: default; }
+.dashboard-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0; }
+.dashboard-tabs button[aria-selected="true"] { background: #155d50; color: #fff; }
+.metric-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.metric-grid article { padding: 18px; border: 1px solid #dce7e3; border-radius: 12px; background: #f8fbf9; }
+.metric-grid article > span { display: block; font-size: 12px; color: #53675f; }
+.metric-grid strong { display: block; font-size: 30px; margin: 12px 0; color: #155d50; }
+.metric-grid .metric-label { font-size: 20px; }
+.dashboard-caution, .territory-reading, .dashboard-empty { padding: 16px; border-radius: 10px; background: #f3f7f5; margin-top: 16px; }
+.territory-reading h3, .method-text h3 { font-size: 16px; }
+.map-layer-controls { position: absolute; z-index: 3; top: 60px; left: 16px; max-width: calc(100% - 32px); display: flex; flex-wrap: wrap; gap: 5px; padding: 6px; background: white; border: 1px solid #dce7e3; border-radius: 10px; box-shadow: 0 2px 10px #12322c12; }
+.map-layer-controls button { padding: 7px 9px; border: 0; background: #f1f6f3; color: #155d50; border-radius: 6px; font-size: 12px; cursor: pointer; }
+.map-layer-controls button[aria-pressed="true"] { color: white; background: #155d50; }
+@media (max-width: 700px) { .metric-grid { grid-template-columns: 1fr; } .dashboard-heading { align-items: stretch; flex-direction: column; } }
+
+.heatmap-note { width: 100%; font-size: 11px; color: #53675f; padding: 4px 6px; }
+
+.map-error { top: auto; bottom: 75px; left: 65px; }

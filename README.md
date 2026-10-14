@@ -251,3 +251,35 @@ BROWSER_EXECUTABLE=/usr/bin/chromium npm run test:e2e
 ```
 
 `E2E_BASE_URL` permite cambiar el servidor de prueba. Esta regresión usa respuestas de proveedor sintéticas y teselas de prueba para comprobar interacciones sin tráfico externo: búsqueda explícita, coordenadas, persistencia al recargar, comparación, radios incompatibles, eliminación y navegación móvil. No equivale a validar disponibilidad o calidad cartográfica real.
+
+## Análisis territorial y mapa dinámico
+
+El apartado **Análisis territorial** incluye densidad de registros por km², diversidad de las seis categorías (Shannon normalizado), categoría predominante, distancia media al vecino más próximo y fracción de registros con otro a ≤50 m. **Calidad de datos** muestra presencia de nombre/marca, dirección y horario; no estima cobertura respecto a un censo. **Metodología** explica las fórmulas, alcance y límites. Los indicadores se calculan sobre el radio completo, aunque filtres los negocios del mapa.
+
+El mapa ofrece **Puntos**, **Agrupaciones** (ampliables con clic), **Mapa de calor**, visibilidad del radio y centrado de la ubicación. Las capas comerciales usan los registros filtrados; el mapa de calor expresa concentración relativa y cambia con el zoom, no afluencia de clientes. Las capas de análisis se inicializan sin esperar a que descarguen todas las teselas del proveedor. Puedes exportar la consulta y sus indicadores como JSON desde el panel.
+
+Los snapshots anteriores siguen siendo legibles: muestran una indicación de volver a consultar para obtener indicadores nuevos. La comparación incorpora densidad, diversidad y distancia al vecino junto con los conteos.
+
+### Motor espacial C++17
+
+`native/spatial.cpp` expone una ABI C, consumida desde Python mediante `ctypes`. Calcula distancias Haversine entre todos los pares para obtener el vecino más próximo; limita el trabajo a 2–2.000 registros y devuelve métricas ausentes fuera de ese rango. No usa muestreo ni bibliotecas externas. La respuesta indica `analysis.spatial_engine` (`cpp`, `python` o `not_computed`). Sin la biblioteca compilada, usa una implementación Python equivalente; el compilador no es necesario para arrancar la aplicación.
+
+Linux con un compilador C++:
+
+```bash
+bash scripts/build-native.sh
+# Reinicia FastAPI después de compilar para activar la biblioteca.
+```
+
+Windows: instala **Visual Studio Build Tools** con herramientas de C++ y usa **Developer PowerShell for Visual Studio**, con objetivo x64 si tu Python es de 64 bits. Desde la raíz, estos comandos no necesitan ejecutar scripts PowerShell ni cambiar su política:
+
+```powershell
+New-Item -ItemType Directory -Force backend\native
+cl.exe /nologo /O2 /LD /EHsc native\spatial.cpp /Febackend\native\geobusiness.dll /Fobackend\native\spatial.obj
+```
+
+Reinicia FastAPI después de compilar. Los binarios son locales, ignorados por Git y específicos de la plataforma. Docker prepara la biblioteca en una etapa de compilación separada; el backend ahora se construye con el contexto de la raíz del repositorio (`docker build -f backend/Dockerfile .`).
+
+Las pruebas comparan el motor C++ con Python, verifican geometría, puntos coincidentes, entradas inválidas, ausencia de datos y el límite de trabajo. Compila primero para ejecutar las pruebas nativas; sin la biblioteca se omiten explícitamente esas dos comprobaciones. No se ha medido una mejora de rendimiento ni validado la compilación nativa en Windows.
+
+MapLibre 6 necesita su módulo worker separado. Los pasos `predev` y `prebuild` copian automáticamente el archivo de la versión instalada a `public/maplibre`; la aplicación lo carga desde esa URL del mismo servidor, sin depender de que Turbopack reconstruya su ruta. Este archivo generado está ignorado por Git. En la salida standalone también debe copiarse `public` junto a `.next/static`; el Dockerfile del frontend incluye ambos.

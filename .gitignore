@@ -14,3 +14,5 @@ coverage/
 dist/
 *.zip
 
+backend/native/
+frontend/public/maplibre/
