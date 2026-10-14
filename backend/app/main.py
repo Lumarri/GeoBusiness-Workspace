@@ -13,6 +13,7 @@ from app.api.routes import router
 from app.core.config import Settings
 from app.core.limits import RateLimiter
 from app.db.cache import MemoryCache, PostgresCache
+from app.services.geocoding import GeocodingClient
 from app.services.nearby import NearbyService
 from app.services.overpass import OverpassClient, ProviderError
 
@@ -48,6 +49,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     ),
                     settings,
                 )
+                app.state.geocoding = GeocodingClient(
+                    client, str(settings.geocoding_url), settings.region_bbox
+                )
                 app.state.engine = engine
                 yield
         finally:
@@ -67,7 +71,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.middleware("http")
     async def limit_requests(request: Request, call_next):
-        if request.url.path == "/api/v1/businesses/nearby":
+        if request.url.path in {"/api/v1/businesses/nearby", "/api/v1/locations/search"}:
             key = request.client.host if request.client else "unknown"
             if not limiter.allow(key):
                 return JSONResponse(

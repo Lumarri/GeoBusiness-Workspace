@@ -39,3 +39,17 @@ El runner del backend mostró un aviso de deprecación de Starlette sobre `httpx
 7. Probar pantalla móvil, teclado y formulario de coordenadas sin WebGL.
 8. Ejecutar la prueba PostGIS y comprobar persistencia al reiniciar servicios sin eliminar el volumen.
 
+
+## Verificación de la ampliación: búsqueda y comparación
+
+Ejecutada en el entorno de desarrollo el 14 de octubre de 2026:
+
+- Backend contra PostgreSQL/PostGIS local: **38 passed**, ninguna prueba omitida. Incluye la consulta espacial y roundtrip de caché/observaciones. Sigue visible el aviso de deprecación de Starlette.
+- Frontend: **8 pruebas aprobadas**, TypeScript y build de producción aprobados.
+- Chromium: regresión con proveedores sintéticos aprobada para búsqueda explícita, selección por coordenadas, guardado, persistencia tras recargar, comparación, radios incompatibles, eliminación y navegación móvil; sin excepciones JavaScript inesperadas.
+- Consulta real de Nominatim para Parque Kennedy, Miraflores: HTTP 200, un candidato en la región.
+- API real con caché PostgreSQL: consulta de 250 m con 234 registros en la ubicación de referencia. Tras reiniciar PostgreSQL y la API, la misma consulta respondió con `cache_hit=true` y conservó los 234 registros. El recuento es una observación de esta ejecución, no una garantía para consultas futuras.
+- `scripts/start-local-db.sh` reutiliza el contenedor/volumen y permite aplicar el esquema sin bind mount del checkout; ejecución repetida sin borrar datos.
+
+Pendientes: sincronización por cuenta, validación de calidad/cobertura en campo, carga multiusuario, build completo de Compose, despliegue público y recuperación de backups. La persistencia en un volumen local no demuestra restauración en una máquina nueva ni publicación del entorno.
+- Flujo real en Chromium: búsqueda de Parque Kennedy, selección, consulta y guardado completados, con 239 registros en el punto devuelto por el geocodificador; sin errores JavaScript. El mapa creó su canvas, pero mostró un error de carga de teselas. Una descarga individual de tesela desde el servidor respondió HTTP 200; la visualización cartográfica real en este navegador queda pendiente de diagnóstico. No se considera cubierta por la regresión de teselas sintéticas.

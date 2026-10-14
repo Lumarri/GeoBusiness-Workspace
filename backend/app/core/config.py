@@ -9,6 +9,7 @@ class Settings(BaseSettings):
 
     database_url: str | None = None
     overpass_url: HttpUrl = "https://overpass-api.de/api/interpreter"
+    geocoding_url: HttpUrl = "https://nominatim.openstreetmap.org/search"
     osm_user_agent: str = "GeoBusinessAI/0.1 (local-development)"
     cache_ttl_seconds: int = Field(default=86400, ge=60, le=604800)
     provider_interval_seconds: float = Field(default=3, ge=0, le=60)

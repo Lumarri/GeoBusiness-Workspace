@@ -226,3 +226,27 @@ h1 span { color: var(--green); }
 @media (max-width: 1000px) { .explorer-layout { grid-template-columns: minmax(0,1fr); } .map-panel { border-right: 0; } .analysis-panel { border-top: 1px solid var(--border); } .panel-content { max-height: 430px; min-height: 180px; } .panel-empty { min-height: 200px; } .map-area { height: 430px; min-height: 430px; } .map-legend > span { width: auto; } .radius-control { flex-direction: row; align-items: center; } .stat-grid { max-width: 400px; } .map-hint { top: 16px; left: auto; right: 16px; } .analysis-heading { padding-bottom: 12px; } .analysis-controls { padding: 15px 18px; } .coordinate-row { padding-left: 18px; } }
 @media (max-width: 760px) { .sidebar { transform: translateX(-100%); transition: transform .2s; width: 236px; } .sidebar-open { transform: translateX(0); } .sidebar-backdrop { display: block; position: fixed; inset: 0; background: #152c2670; z-index: 25; } .main-workspace { width: 100%; margin-left: 0; padding: 0 15px; } .mobile-menu { display: inline-flex; } .topbar { height: 56px; } .topbar-right { gap: 8px; } .region-badge { display: none; } .workspace-intro { padding: 23px 0; } h1 { font-size: 26px; letter-spacing: -.9px; max-width: 360px; } .workspace-intro .eyebrow { font-size: 7px; letter-spacing: 1.3px; } .map-hint { top: 54px; left: 15px; right: auto; } .map-area { height: 400px; min-height: 400px; } .map-toolbar { padding: 12px; gap: 9px; } .search-field input { font-size: 10px; } .category-select select { max-width: 108px; font-size: 9px; } .workspace-footer { flex-wrap: wrap; line-height: 1.5; } .map-legend { gap: 10px; } .map-legend > span { width: 100%; } .analysis-controls { padding: 14px 12px; gap: 8px; } .radius-control { flex-direction: column; align-items: start; gap: 5px; } .analyze-button { padding: 12px; font-size: 10px; } .analysis-controls .analyze-button svg:last-child { display: none; } .pilot-badge { font-size: 6px; } .breadcrumb { gap: 5px; font-size: 9px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+
+.address-search, .analysis-library { padding: 20px; background: #fff; border: 1px solid #dce7e3; border-radius: 14px; }
+.address-search { border-radius: 0; border-width: 0 0 1px; }
+.address-search label, .analysis-library form label { display: block; font-weight: 600; margin-bottom: 8px; }
+.address-input { display: flex; gap: 10px; }
+.address-input input { min-width: 0; flex: 1; border: 1px solid #cadbd5; border-radius: 8px; padding: 10px; }
+.address-input button, .saved-list button { border: 1px solid #cadbd5; border-radius: 8px; background: #f0f7f4; padding: 10px; color: #155d50; cursor: pointer; }
+.address-input button:disabled { opacity: .5; cursor: default; }
+.address-search small, .analysis-library p { color: #53675f; font-size: 13px; line-height: 1.6; }
+.address-search small { display: block; margin-top: 8px; }
+.address-search ul { padding: 0; list-style: none; }
+.address-search li button { width: 100%; text-align: left; padding: 10px; background: #f0f7f4; border: 1px solid #dce7e3; cursor: pointer; }
+.analysis-library { margin: 24px 0; scroll-margin-top: 20px; }
+.analysis-library h2 { font-size: 20px; }
+.saved-list { list-style: none; padding: 0; }
+.saved-list li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid #dce7e3; }
+.saved-list label { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.saved-list span { font-size: 12px; color: #53675f; }
+.saved-list li > div { display: flex; gap: 8px; }
+.comparison-table { overflow-x: auto; }
+.comparison-table table { width: 100%; border-collapse: collapse; min-width: 480px; }
+.comparison-table caption { text-align: left; font-weight: 600; padding: 12px 0; }
+.comparison-table th, .comparison-table td { text-align: left; border-bottom: 1px solid #dce7e3; padding: 10px; font-size: 13px; }
+@media (max-width: 640px) { .address-input, .saved-list li { flex-direction: column; align-items: stretch; } }

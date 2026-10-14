@@ -61,7 +61,7 @@ Las categorías/descripciones devueltas son calculadas desde tags. Las distancia
 - Los navegadores que pasan por el proxy Next.js comparten la IP observada por FastAPI. El límite efectivo de 12/minuto se agrega para ellos. No se aceptan cabeceras `X-Forwarded-For` arbitrarias para evitar evasión; una capa de identidad y proxies de confianza debe preceder al SaaS multiusuario.
 - Caché por coordenada exacta y radio; no cubre puntos cercanos por aproximación. La memoria de desarrollo admite 16 entradas y no es persistente.
 - La extensión regional es una caja configurable, no una delimitación administrativa oficial.
-- No hay autenticación, cuentas, comparación guardada, facturación ni gestión de permisos.
+- No hay autenticación, cuentas, facturación ni gestión de permisos. La comparación descriptiva se guarda en localStorage del navegador, sin sincronización ni persistencia por usuario en el servidor.
 - La API usa GET; no recibe operaciones de escritura del navegador ni solicitudes QL libres. Las únicas URLs de proveedores son configuración del operador.
 - Los payloads completos se limitan a 8 MiB y las consultas a 25 segundos en Overpass / 35 segundos HTTP. El proxy tiene un timeout de 40 segundos.
 - No existe un sistema de migraciones todavía. El SQL inicial sirve para una base nueva; adoptar Alembic antes de evolucionar datos persistidos.
@@ -72,3 +72,9 @@ Para otra ciudad, cambiar extensión/nombre en el backend y puntos de navegació
 
 Las dependencias de redes y estadística están declaradas en el extra Python `analysis`, pero **no se instalan ni se ejecutan** en esta primera etapa. La API versionada y los componentes separados permiten agregarlas sin rehacer el mapa.
 
+
+## Búsqueda y snapshots locales
+
+`AddressSearch.tsx` envía una búsqueda explícita al proxy `/api/v1/locations/search`. `GeocodingClient` limita Nominatim a una solicitud por segundo por proceso, cachea hasta 128 búsquedas durante 24 horas y restringe resultados a Perú y al bbox. Es un servicio de desarrollo de bajo volumen, no un geocodificador distribuido. No hay autocompletado.
+
+`AnalysisLibrary.tsx` guarda hasta diez respuestas completas con nombre y fecha en un formato versionado y validado por Zod. Solo actualiza el estado si la escritura de localStorage tiene éxito. Un formato ilegible se conserva y bloquea escrituras para evitar pérdida silenciosa. La comparación requiere 2–3 snapshots de la misma región y radio, muestra fecha/TTL y no asigna puntajes. Abrir restaura el snapshot; actualizar requiere una nueva consulta explícita.

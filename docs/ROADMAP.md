@@ -1,4 +1,10 @@
-# Etapas siguientes · diseño, sin implementación anticipada
+# Hoja de ruta
+
+## Entregado: búsqueda y comparación inicial
+
+Búsqueda explícita de direcciones en Lima mediante Nominatim; guardado de hasta diez snapshots por navegador; comparación descriptiva de dos o tres snapshots de la misma región y radio. No incluye cuentas, sincronización, análisis de redes ni puntuaciones. PostGIS y persistencia de caché se validaron en una base local; los conteos siguen representando registros OSM.
+
+Las fases siguientes mantienen su alcance pendiente.
 
 ## Etapa 2: inteligencia territorial
 

@@ -24,3 +24,16 @@ async def nearby(request: Request, query: Annotated[NearbyQuery, Query()]):
     if not (west <= query.lng <= east and south <= query.lat <= north):
         raise HTTPException(422, detail="La ubicación está fuera de la región habilitada.")
     return await request.app.state.nearby.query(query)
+
+
+@router.get("/locations/search")
+async def search_locations(
+    request: Request, q: Annotated[str, Query(min_length=3, max_length=160)]
+):
+    if len(q.strip()) < 3:
+        raise HTTPException(422, detail="Escribe al menos tres caracteres.")
+    return {
+        "results": await request.app.state.geocoding.search(q),
+        "provider": "OpenStreetMap / Nominatim",
+        "license": "ODbL-1.0",
+    }

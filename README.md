@@ -224,3 +224,30 @@ No se requieren claves de IA ni pagos de API para esta etapa local. OSM/Overpass
 - **Error de esquema PostGIS:** comprueba que `001_schema.sql` haya sido aplicado. Los volúmenes existentes no vuelven a ejecutar automáticamente los scripts iniciales.
 - **429 con varios usuarios:** el proxy Next.js comparte una IP frente al backend. En este MVP el límite se agrega para esos usuarios; no se confía en cabeceras de IP suministradas por el navegador.
 
+
+## Búsqueda, guardado y comparación
+
+- El formulario **Buscar dirección o lugar en Lima** consulta Nominatim únicamente al enviar la búsqueda. Elegir un resultado mueve la ubicación; analizar negocios sigue siendo una acción explícita.
+- `GET /api/v1/locations/search?q=...` limita la consulta a Perú y a la extensión regional, devuelve hasta cinco candidatos y filtra resultados fuera de ella. La API valida 3–160 caracteres, limita consultas y cachea búsquedas durante 24 horas (hasta 128 entradas por proceso). No hay autocompletado.
+- `GEOCODING_URL` permite configurar un endpoint compatible con el contrato JSON de Nominatim; por defecto `https://nominatim.openstreetmap.org/search`. El proveedor público se limita a desarrollo de bajo volumen, una solicitud por segundo y un solo proceso. Para uso público configura identificación/contacto real en `OSM_USER_AGENT`, revisa https://operations.osmfoundation.org/policies/nominatim/ y utiliza un proveedor apropiado con límites compartidos entre instancias.
+- Tras una consulta puedes **Guardar análisis** con un nombre. Se conservan hasta diez snapshots completos en `localStorage` del navegador. No hay sincronización entre dispositivos ni cuentas; borrar los datos del sitio elimina estos análisis. Si el almacenamiento falla se muestra un error sin sustituir los datos anteriores.
+- **Abrir** restaura el snapshot y su ubicación; no solicita datos frescos automáticamente. Para actualizarlo, pulsa Analizar ubicación y guarda el nuevo resultado.
+- Selecciona dos o tres snapshots de la misma región y radio para ver conteos por categoría, coordenadas, fechas y vigencia de caché. Las diferencias de cobertura y fecha deben considerarse; los conteos no representan demanda, competencia directa ni probabilidad de éxito.
+
+Pruebas nuevas: `backend/tests/test_geocoding.py` (validación, cobertura regional, caché, pausa y errores del proveedor) y `frontend/src/lib/analyses.test.ts` (persistencia, formatos inválidos y compatibilidad de comparación).
+
+### Base local nativa y regresión en navegador
+
+En este entorno, Docker no puede leer montajes de archivos del checkout. Para usar una base local sin ese montaje, crea `.env` desde `.env.example` y ejecuta `bash scripts/start-local-db.sh`. El script inicia/reutiliza `geobusiness-postgis`, conserva `geobusiness_postgres_data`, publica PostgreSQL solo en loopback y aplica el esquema por stdin. No borra datos ni sustituye migraciones. Configura `backend/.env` con `DATABASE_URL` correspondiente a estos valores de desarrollo y reinicia la API; `/health/ready` debe indicar `postgresql`.
+
+Desde `frontend`, con frontend/API activos:
+
+```bash
+# Una sola vez, si no tienes Chromium instalado:
+npx playwright install chromium
+npm run test:e2e
+# Alternativa con el Chromium disponible en esta máquina:
+BROWSER_EXECUTABLE=/usr/bin/chromium npm run test:e2e
+```
+
+`E2E_BASE_URL` permite cambiar el servidor de prueba. Esta regresión usa respuestas de proveedor sintéticas y teselas de prueba para comprobar interacciones sin tráfico externo: búsqueda explícita, coordenadas, persistencia al recargar, comparación, radios incompatibles, eliminación y navegación móvil. No equivale a validar disponibilidad o calidad cartográfica real.

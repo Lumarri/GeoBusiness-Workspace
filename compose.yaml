@@ -19,6 +19,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       OVERPASS_URL: ${OVERPASS_URL:-https://overpass-api.de/api/interpreter}
+      GEOCODING_URL: ${GEOCODING_URL:-https://nominatim.openstreetmap.org/search}
       OSM_USER_AGENT: ${OSM_USER_AGENT:-GeoBusinessAI/0.1 (local-development)}
       CACHE_TTL_SECONDS: ${CACHE_TTL_SECONDS:-86400}
       PROVIDER_INTERVAL_SECONDS: ${PROVIDER_INTERVAL_SECONDS:-3}
